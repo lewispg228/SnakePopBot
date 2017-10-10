@@ -1,0 +1,12 @@
+32u4: 3.13
+crystal: .25
+total: 3.38
+
+328: 1.65
+resonator: .16
+CH340G: .23
+12MHz Crystal (for the CH340G: .24
+total: 2.28
+
+*1.10 less
+**Added bonus of selecting "UNO" in IDE, and usually no driver installation needed.
