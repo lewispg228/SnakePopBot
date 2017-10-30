@@ -15,6 +15,7 @@ Servo myservo;  // create servo object to control a servo
 
 int reading = 0; // initiate light reading variable at zero, to avoid a false start.
 int previous_reading = 0; // used to store previsou reading and help notice a delta downward.
+int count = 0; // for debouncing noise in the room. We wanna make sure that they covered the light, and actually covered it for a sec.
 
 void setup() {
   
@@ -31,6 +32,7 @@ void loop() {
 
   while(1)
   {
+    count = 0;
     reading = analogRead(A0);
     int delta = previous_reading - reading;
     Serial.print("\tprevious_reading: ");
@@ -39,13 +41,16 @@ void loop() {
     Serial.print(reading);
     Serial.print("\tdelta: ");
     Serial.println(delta);    
-    if(delta > 10)
+    if(delta > 5)
     {
-    break;
+      while((analogRead(A0) + 5) < previous_reading) {
+        Serial.println(count);
+        count++;
+        if(count > 60) break;
+      }
     }
+    if(count > 60) break;
     previous_reading = reading; // store in this variable to use on next round of loop.
-    
-
   }
 
 // delay a random time from 5 to 8 seconds
