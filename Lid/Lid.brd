@@ -225,7 +225,7 @@
 <wire x1="96.52" y1="-29.21" x2="91.44" y2="-29.21" width="0.1524" layer="20"/>
 <wire x1="91.44" y1="-29.21" x2="91.44" y2="-36.83" width="0.1524" layer="20"/>
 <wire x1="91.44" y1="-36.83" x2="96.52" y2="-36.83" width="0.1524" layer="20"/>
-<wire x1="-35.56" y1="-25.4" x2="58.42" y2="-25.4" width="0.1524" layer="49" style="shortdash"/>
+<wire x1="-35.56" y1="-25.4" x2="104.14" y2="-25.4" width="0.1524" layer="49" style="shortdash"/>
 <wire x1="58.42" y1="-33.02" x2="-35.56" y2="-33.02" width="0.1524" layer="49" style="shortdash"/>
 <dimension x1="-35.56" y1="-25.4" x2="-35.56" y2="-33.02" x3="-38.1" y3="-29.21" textsize="1.778" layer="49" unit="inch"/>
 <wire x1="96.52" y1="-29.21" x2="96.52" y2="-25.4" width="0.1524" layer="20"/>
@@ -537,7 +537,6 @@ These rules have been curated by SparkFuns DFM commitee. After doing much resear
 <element name="E$1" library="lid" package="CAN_DIA" value="" x="0.026696875" y="-0.003675" smashed="yes" rot="R12"/>
 <element name="E$2" library="lid" package="MICRO_SERVO" value="" x="-13.841925" y="34.701259375" smashed="yes" rot="R12"/>
 <element name="E$3" library="lid" package="LID_THICKNESS_060" value="" x="54.61" y="-33.02" smashed="yes" rot="R90"/>
-<element name="E$6" library="lid" package="CAN_DIA" value="" x="82.576696875" y="-0.003675" smashed="yes" rot="R12"/>
 <element name="E$7" library="lid" package="LID_THICKNESS_060" value="" x="9.652" y="-33.02" smashed="yes"/>
 <element name="E$8" library="lid" package="LID_THICKNESS_060" value="" x="-9.652" y="-33.02" smashed="yes" rot="R180"/>
 </elements>
