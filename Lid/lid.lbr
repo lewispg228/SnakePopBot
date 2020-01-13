@@ -81,8 +81,8 @@
 <wire x1="16.51" y1="-6.35" x2="16.51" y2="0" width="0.0762" layer="49"/>
 <wire x1="16.51" y1="0" x2="16.51" y2="6.35" width="0.0762" layer="49"/>
 <wire x1="16.51" y1="6.35" x2="11.43" y2="6.35" width="0.0762" layer="49"/>
-<circle x="13.97" y="0" radius="0.889" width="0.0762" layer="20"/>
-<circle x="-13.97" y="0" radius="0.889" width="0.0762" layer="20"/>
+<circle x="13.97" y="0" radius="0.762" width="0.0762" layer="20"/>
+<circle x="-13.97" y="0" radius="0.762" width="0.0762" layer="20"/>
 <wire x1="0" y1="-6.35" x2="0" y2="6.35" width="0.0762" layer="49" style="shortdash"/>
 <wire x1="16.51" y1="0" x2="8.89" y2="0" width="0.0762" layer="49" style="shortdash"/>
 <circle x="6.35" y="0" radius="2.54" width="0.0762" layer="49"/>
