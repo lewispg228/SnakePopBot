@@ -20,7 +20,7 @@
     A track consists of a sequence of timestamps and event types.
 
     NOTE!! EEPROM location 0 is special and will contain the selected track.
-    
+
     EEPROM location 1023 is special and will tell us if this is a fresh IC.
     Fresh ICs come with all EEPROM set to 255, so that means we need to do a factory reset.
     After we do a factory reset, then we will set location 1023 to a 1, indicating that this is no longer
@@ -79,6 +79,11 @@
 
 */
 
+#include <Servo.h>
+
+Servo myservo;  // create servo object to control a servo
+// twelve servo objects can be created on most boards
+
 //#define POP 40
 //#include <Servo.h>
 //Servo myservo;  // create servo object to control a servo
@@ -90,6 +95,30 @@
 #define SNAKE 3
 #define END 99 // had to choose something, so went with this, wanted to leave room for other future event types
 
+// Control Buttons
+#define RECORD_BUTTON 2
+#define PLAY_BUTTON 11
+#define TRACK_SELECT_BUTTON 12
+#define YES_BUTTON 6
+#define NO_BUTTON 9
+#define SNAKE_BUTTON 11
+
+// User input commands
+#define RECORD_CMD 1
+#define PLAY_CMD 2
+#define TRACK_CMD 3
+#define YES_CMD 4
+#define NO_CMD 5
+#define SNAKE_CMD 6
+
+byte userInput = 0; // global variable to store current user input command
+
+
+#define SERVO_PWM_PIN 10
+#define SERVO_PWR_CONTROL_PIN 14
+
+#define LED_pin 13
+
 // example tracks
 // they are a sequence of events
 // they are formatted like so:
@@ -100,29 +129,36 @@
 // all tracks must have a last event delay of 0, followed by an event type END
 
 byte example_track_1[] = {
-  10, YES, // first event, delay 1.0 second, sound "yes" 
-  15, NO, // second event, delay 1.5 seconds, sound "no"
-  10, YES, 
-  20, NO, 
-  20, SNAKE, // delay 2.0 seconds, pop the snake
-  0, END};
-  
+  70, YES, // first event, delay 1.0 second, sound "yes"
+  70, NO, // second event, delay 1.5 seconds, sound "no"
+  70, NO,
+  70, NO,
+  70, YES,
+  70, YES,
+  0, YES,
+  0, YES,
+  50, SNAKE, // delay 2.0 seconds, pop the snake
+  0, END
+};
+
 byte example_track_2[] = {
-  20, NO, 
-  20, NO, 
-  20, NO, 
-  20, NO, 
-  30, SNAKE, 
-  0, END};
-  
+  20, NO,
+  20, NO,
+  20, NO,
+  20, NO,
+  30, SNAKE,
+  0, END
+};
+
 byte example_track_3[] = {
-  30, YES, 
-  30, YES, 
-  30, YES, 
-  30, YES, 
-  10, YES, 
-  40, SNAKE, 
-  0, END};
+  30, YES,
+  30, YES,
+  30, YES,
+  30, YES,
+  10, YES,
+  40, SNAKE,
+  0, END
+};
 
 void setup() {
 
@@ -130,21 +166,55 @@ void setup() {
   pinMode(4, OUTPUT); // buzzer low side (simon says kit)
   digitalWrite(4, LOW);   // note, other size fo buzzer is 7, and we will call that in tone, later.
 
+  pinMode(LED_pin, OUTPUT); // "talk LED"
+  digitalWrite(LED_pin, LOW);
+
+  // buttons
+  pinMode(RECORD_BUTTON, INPUT_PULLUP);
+  pinMode(PLAY_BUTTON, INPUT_PULLUP);
+  pinMode(TRACK_SELECT_BUTTON, INPUT_PULLUP);
+  pinMode(YES_BUTTON, INPUT_PULLUP);
+  pinMode(NO_BUTTON, INPUT_PULLUP);
+  pinMode(SNAKE_BUTTON, INPUT_PULLUP);
+  
+
+  myservo.attach(SERVO_PWM_PIN);  // attaches the servo on pin # to the servo object
+  myservo.write(0);
+
   // check for fresh IC. If so, then do a factory reset
   if (EEPROM.read(1023) == 255) factory_reset();
 
   //print_EEPROM();
 
-  set_track(1);
+  //set_track(1);
 
-  play_track();
+  //play_track();
 
-  while (1);
+  //while (1);
 }
 
 void loop()
 {
-
+  if (check_buttons() == true)
+  {
+    switch (userInput) {
+      case RECORD_CMD:
+        Serial.println("Recording new track...");
+        //record_track();
+        break;
+      case PLAY_CMD:
+        play_track();
+        break;
+      case TRACK_CMD:
+        increment_track();
+        break;
+      default:
+        Serial.print("Invalid userInput: ");
+        Serial.println(userInput);
+        break;
+    }
+  }
+  delay(10); // button debounce
 }
 
 boolean play_track()
@@ -187,12 +257,16 @@ boolean play_track()
 
     switch (event_type) {
       case YES:
+        digitalWrite(LED_pin, HIGH);
         Serial.println("YES");
         yes();
+        digitalWrite(LED_pin, LOW);
         break;
       case NO:
+        digitalWrite(LED_pin, HIGH);
         Serial.println("NO");
         no();
+        digitalWrite(LED_pin, LOW);
         break;
       case SNAKE:
         Serial.println("SNAKE");
@@ -234,6 +308,7 @@ void no()
 
 void snake()
 {
+  myservo.write(180);
   // turn on servo power
   // move servo to open lid position
   // detach() servo control pin
@@ -289,4 +364,41 @@ void set_track(byte track)
 {
   EEPROM.write(0, track); // store it in special EEPROM location for reading at play_track
   // and to save through a power cycle.
+}
+
+void increment_track()
+{
+  Serial.println("Incrementing track...");
+  byte track = EEPROM.read(0);
+  track++;
+  if (track == 6) track = 1; // loop back to track 1 (we only have EEPROM room for 5 total tracks)
+  Serial.print("track: ");
+  Serial.println(track);
+  blink_track(track);
+  set_track(track);
+}
+
+void blink_track(byte times)
+{
+  delay(1000);
+  for (byte i = 0 ; i < times ; i++)
+  {
+    digitalWrite(LED_pin, HIGH);
+    delay(100);
+    digitalWrite(LED_pin, LOW);
+    delay(500);
+  }
+}
+
+boolean check_buttons()
+{
+  userInput = 0;
+  if(digitalRead(RECORD_BUTTON) == false) userInput = RECORD_CMD;
+  else if(digitalRead(PLAY_BUTTON) == false) userInput = PLAY_CMD;
+  else if(digitalRead(TRACK_SELECT_BUTTON) == false) userInput = TRACK_CMD;
+  else if(digitalRead(YES_BUTTON) == false) userInput = YES_CMD;
+  else if(digitalRead(NO_BUTTON) == false) userInput = NO_CMD;
+  else if(digitalRead(SNAKE_BUTTON) == false) userInput = SNAKE_CMD;
+  if(userInput) return true;
+  else return false;
 }
