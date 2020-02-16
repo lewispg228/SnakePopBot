@@ -176,7 +176,7 @@ void setup() {
   pinMode(YES_BUTTON, INPUT_PULLUP);
   pinMode(NO_BUTTON, INPUT_PULLUP);
   pinMode(SNAKE_BUTTON, INPUT_PULLUP);
-  
+
 
   myservo.attach(SERVO_PWM_PIN);  // attaches the servo on pin # to the servo object
   myservo.write(0);
@@ -188,9 +188,9 @@ void setup() {
 
   //set_track(1);
 
-  //play_track();
+  play_track();
 
-  //while (1);
+  while (1);
 }
 
 void loop()
@@ -199,8 +199,7 @@ void loop()
   {
     switch (userInput) {
       case RECORD_CMD:
-        Serial.println("Recording new track...");
-        //record_track();
+        record_track();
         break;
       case PLAY_CMD:
         play_track();
@@ -229,13 +228,7 @@ boolean play_track()
   // look for END event type, then store it in local
   // variable, use it later for playback for loop
 
-  int start_mem_location;
-  if (track == 1) start_mem_location = 1;
-  if (track == 2) start_mem_location = 100;
-  if (track == 3) start_mem_location = 200;
-  if (track == 4) start_mem_location = 300;
-  if (track == 5) start_mem_location = 400;
-  if (track == 6) start_mem_location = 500;
+  int start_mem_location = get_start_mem_location(track);
 
   // Play back the track
   byte event_type = 0; // yes, no, snake, end
@@ -393,12 +386,85 @@ void blink_track(byte times)
 boolean check_buttons()
 {
   userInput = 0;
-  if(digitalRead(RECORD_BUTTON) == false) userInput = RECORD_CMD;
-  else if(digitalRead(PLAY_BUTTON) == false) userInput = PLAY_CMD;
-  else if(digitalRead(TRACK_SELECT_BUTTON) == false) userInput = TRACK_CMD;
-  else if(digitalRead(YES_BUTTON) == false) userInput = YES_CMD;
-  else if(digitalRead(NO_BUTTON) == false) userInput = NO_CMD;
-  else if(digitalRead(SNAKE_BUTTON) == false) userInput = SNAKE_CMD;
-  if(userInput) return true;
+  if (digitalRead(RECORD_BUTTON) == false) userInput = RECORD_CMD;
+  else if (digitalRead(PLAY_BUTTON) == false) userInput = PLAY_CMD;
+  else if (digitalRead(TRACK_SELECT_BUTTON) == false) userInput = TRACK_CMD;
+  else if (digitalRead(YES_BUTTON) == false) userInput = YES_CMD;
+  else if (digitalRead(NO_BUTTON) == false) userInput = NO_CMD;
+  else if (digitalRead(SNAKE_BUTTON) == false) userInput = SNAKE_CMD;
+  if (userInput) return true;
   else return false;
+}
+
+void record_track()
+{
+  // record user "playing in" their track.
+  // user will press yes, no and snake to create a "magic show"
+  // we need to keep track of time (using millis()) and record event times and event types.
+  // as the user "plays in" their track, we will record each event into EEPROM.
+  // user hits 'record' button a second time to end the recording.
+
+  byte track = EEPROM.read(0);
+
+  Serial.print("Recording track ");
+  Serial.println(track);
+
+  long start_time = millis(); // grab the current start time
+  boolean recording_status = true; // used to know when we are recording, and when we are done recording.
+  byte recording_length = 0; // used to keep track of how many events we've recorded, and where we should record the next event in EEPROM
+
+  while (recording_status == true) // keep recording in each button press until we want to stop recording
+  {
+    // note, we may want to consider flashing (or glowing) the "talk LED" during the recording to indicate that we're recording.
+    // I also think a chirp on the buzzer every second might be a good indicator that we're recording.
+
+    if (check_buttons() == true) // if they press something, let's record it...
+    {
+      long event_delay = start_time - millis(); // grab event delay ***STILL need to truncate this to a byte format for 0-255 (00.0-25.5 second format)
+
+      // check for valid userInput, we want to ignore if the user presses anything other than yes, no snake or record.
+      
+      if (userInput == YES_CMD)
+      {
+        record_event(track, event_delay, YES, recording_length); // record event delay and and event type into EEPROM
+        recording_length++;
+      }
+      else if (userInput == NO_CMD)
+      {
+        record_event(track, event_delay, NO, recording_length); // record event delay and and event type into EEPROM
+        recording_length++;
+      }
+      else if (userInput == SNAKE_CMD)
+      {
+        record_event(track, event_delay, SNAKE, recording_length); // record event delay and and event type into EEPROM
+        recording_length++;
+      }
+      else if (userInput == RECORD_CMD)
+      {
+        record_event(track, event_delay, END, recording_length); // record an "end command" to EEPROM
+        recording_status = false; // user hit "record button" a second time, so stop recording.
+      }
+
+    }
+  }
+}
+
+void record_event(byte track, byte event_delay, byte event_type, byte recording_length)
+{
+  int start_mem_location = get_start_mem_location(track); // get the first event location of track (1, 100, 200, etc.)
+  int offset = recording_length * 2; // because we record both event delay and event type, each "event" acutally takes up 2 EEPROM spots
+  int record_to_location = start_mem_location + offset;
+
+  EEPROM.write(record_to_location, event_delay);
+  EEPROM.write(record_to_location + 1, event_type);
+}
+
+int get_start_mem_location(byte track)
+{
+  if (track == 1) return = 1;
+  if (track == 2) return = 100;
+  if (track == 3) return = 200;
+  if (track == 4) return = 300;
+  if (track == 5) return = 400;
+  if (track == 6) return = 500;
 }
