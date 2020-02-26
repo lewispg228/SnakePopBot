@@ -12623,7 +12623,7 @@ CONN_03x2
 <part name="P+1" library="SparkFun" deviceset="3.3V" device="" value="VCC"/>
 <part name="GND5" library="SparkFun" deviceset="GND" device=""/>
 <part name="C2" library="SparkFun-Capacitors" deviceset="0.1UF-25V(+80/-20%)(0603)" device="" value="0.1uF"/>
-<part name="U1" library="SparkFun-DigitalIC" deviceset="ATMEGA328P_TQFP" device="" value="ATMEGA328P_TQFP"/>
+<part name="U1" library="SparkFun-DigitalIC" deviceset="ATMEGA328P_TQFP" device="" value="ATMEGA328P"/>
 <part name="JP1" library="Testing" deviceset="M02" device="PTH"/>
 <part name="GND6" library="SparkFun" deviceset="GND" device=""/>
 <part name="JP2" library="Testing" deviceset="M03" device="LOCK" value="Servo 1"/>
