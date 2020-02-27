@@ -12662,7 +12662,7 @@ CONN_03x2
 <sheets>
 <sheet>
 <plain>
-<text x="238.76" y="7.62" size="2.54" layer="94">V01</text>
+<text x="238.76" y="7.62" size="2.54" layer="94">V10</text>
 <text x="165.354" y="11.43" size="2.54" layer="94">Pete Lewis</text>
 <text x="2.54" y="177.8" size="2.54" layer="97">Power Circuit:</text>
 <wire x1="147.32" y1="35.56" x2="147.32" y2="114.3" width="0.2032" layer="97" style="shortdash"/>
@@ -12941,16 +12941,6 @@ CONN_03x2
 <wire x1="60.96" y1="17.78" x2="60.96" y2="20.32" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="J1" gate="G$1" pin="GND"/>
-<wire x1="124.46" y1="22.86" x2="127" y2="22.86" width="0.1524" layer="91"/>
-<wire x1="127" y1="22.86" x2="127" y2="20.32" width="0.1524" layer="91"/>
-<pinref part="J1" gate="G$1" pin="CTS"/>
-<wire x1="127" y1="20.32" x2="127" y2="7.62" width="0.1524" layer="91"/>
-<wire x1="124.46" y1="20.32" x2="127" y2="20.32" width="0.1524" layer="91"/>
-<junction x="127" y="20.32"/>
-<pinref part="GND9" gate="1" pin="GND"/>
-</segment>
-<segment>
 <pinref part="J2" gate="G$1" pin="6"/>
 <wire x1="198.12" y1="55.88" x2="200.66" y2="55.88" width="0.1524" layer="91"/>
 <pinref part="GND10" gate="1" pin="GND"/>
@@ -12987,6 +12977,16 @@ CONN_03x2
 <wire x1="111.76" y1="76.2" x2="109.22" y2="76.2" width="0.1524" layer="91"/>
 <wire x1="109.22" y1="76.2" x2="109.22" y2="73.66" width="0.1524" layer="91"/>
 <pinref part="GND12" gate="1" pin="GND"/>
+</segment>
+<segment>
+<pinref part="J1" gate="G$1" pin="GND"/>
+<wire x1="124.46" y1="22.86" x2="127" y2="22.86" width="0.1524" layer="91"/>
+<wire x1="127" y1="22.86" x2="127" y2="20.32" width="0.1524" layer="91"/>
+<pinref part="J1" gate="G$1" pin="CTS"/>
+<wire x1="124.46" y1="20.32" x2="127" y2="20.32" width="0.1524" layer="91"/>
+<pinref part="GND9" gate="1" pin="GND"/>
+<wire x1="127" y1="20.32" x2="127" y2="7.62" width="0.1524" layer="91"/>
+<junction x="127" y="20.32"/>
 </segment>
 </net>
 <net name="SCK" class="0">
@@ -13054,9 +13054,9 @@ CONN_03x2
 <label x="231.14" y="124.46" size="1.27" layer="95" xref="yes"/>
 </segment>
 <segment>
-<pinref part="J1" gate="G$1" pin="TXO"/>
-<wire x1="124.46" y1="15.24" x2="129.54" y2="15.24" width="0.1524" layer="91"/>
-<label x="129.54" y="15.24" size="1.27" layer="95" xref="yes"/>
+<pinref part="J1" gate="G$1" pin="RXI"/>
+<wire x1="124.46" y1="12.7" x2="129.54" y2="12.7" width="0.1524" layer="91"/>
+<label x="129.54" y="12.7" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="RST" class="0">
@@ -13165,9 +13165,9 @@ CONN_03x2
 <label x="231.14" y="121.92" size="1.27" layer="95" xref="yes"/>
 </segment>
 <segment>
-<pinref part="J1" gate="G$1" pin="RXI"/>
-<wire x1="124.46" y1="12.7" x2="129.54" y2="12.7" width="0.1524" layer="91"/>
-<label x="129.54" y="12.7" size="1.27" layer="95" xref="yes"/>
+<pinref part="J1" gate="G$1" pin="TXO"/>
+<wire x1="124.46" y1="15.24" x2="129.54" y2="15.24" width="0.1524" layer="91"/>
+<label x="129.54" y="15.24" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="SERVO_1" class="0">
