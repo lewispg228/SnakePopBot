@@ -76,6 +76,16 @@
     Release button.
     Now your controller has been set back to it's orginal tracks and your other tracks have been cleared.
 
+    // Hardware setup:
+    Micro:      ATEMGA328
+    Ext osc:    16 MHz
+    Brownout:   2.7V
+    HIGH FUSE:  0xDE
+    LOW FUSE:   0xFF
+    EXT FUSE:   0xFD
+    LOCK:       0xCF
+    Bootloader: Optiboot
+    Board select: Arduino/Genuino Uno
 
 */
 
