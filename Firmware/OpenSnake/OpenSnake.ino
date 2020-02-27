@@ -106,12 +106,12 @@ Servo myservo;  // create servo object to control a servo
 #define END 99 // had to choose something, so went with this, wanted to leave room for other future event types
 
 // Control Buttons
-#define RECORD_BUTTON 2
-#define PLAY_BUTTON 11
-#define TRACK_SELECT_BUTTON 12
-#define YES_BUTTON 6
-#define NO_BUTTON 9
-#define SNAKE_BUTTON 11
+#define RECORD_BUTTON A0
+#define PLAY_BUTTON A1
+#define TRACK_SELECT_BUTTON A2
+#define YES_BUTTON A5
+#define NO_BUTTON A4
+#define SNAKE_BUTTON A3
 
 // User input commands
 #define RECORD_CMD 1
@@ -124,8 +124,9 @@ Servo myservo;  // create servo object to control a servo
 byte userInput = 0; // global variable to store current user input command
 
 
-#define SERVO_PWM_PIN 10
-#define SERVO_PWR_CONTROL_PIN 14
+#define SERVO_PWM_PIN 9
+#define SERVO_PWR_CONTROL_PIN 7
+#define BUZZER_PIN 8
 
 #define LED_pin 13
 
@@ -139,22 +140,22 @@ byte userInput = 0; // global variable to store current user input command
 // all tracks must have a last event delay of 0, followed by an event type END
 
 byte example_track_1[] = {
-  70, YES, // first event, delay 1.0 second, sound "yes"
-  70, NO, // second event, delay 1.5 seconds, sound "no"
+  70, YES, // first event, delay 7.0 second, sound "yes"
+  70, NO, // second event, delay 7.0 seconds, sound "no"
   70, NO,
   70, NO,
   70, YES,
   70, YES,
   0, YES,
   0, YES,
-  50, SNAKE, // delay 2.0 seconds, pop the snake
+  50, SNAKE, // delay 5.0 seconds, pop the snake
   0, END
 };
 
 byte example_track_2[] = {
+  20, YES,
   20, NO,
-  20, NO,
-  20, NO,
+  20, YES,
   20, NO,
   30, SNAKE,
   0, END
@@ -187,20 +188,22 @@ void setup() {
   pinMode(NO_BUTTON, INPUT_PULLUP);
   pinMode(SNAKE_BUTTON, INPUT_PULLUP);
 
-
-  myservo.attach(SERVO_PWM_PIN);  // attaches the servo on pin # to the servo object
-  myservo.write(0);
+  pinMode(SERVO_PWR_CONTROL_PIN, OUTPUT); //
+  digitalWrite(SERVO_PWR_CONTROL_PIN, LOW);
 
   // check for fresh IC. If so, then do a factory reset
-  if (EEPROM.read(1023) == 255) factory_reset();
+  //if (EEPROM.read(1023) == 255) factory_reset();
+
+  Serial.print("Current track ");
+  Serial.println(EEPROM.read(0));
 
   //print_EEPROM();
 
   //set_track(1);
 
-  play_track();
+  //play_track();
 
-  while (1);
+  //while (1);
 }
 
 void loop()
@@ -293,29 +296,34 @@ void yes()
 {
   for (int note = 150 ; note < 4000 ; note += 150)
   {
-    tone(7, note, 40);
+    tone(BUZZER_PIN, note, 40);
     delay(30);
   }
-  noTone(7);
+  noTone(BUZZER_PIN);
 }
 
 void no()
 {
   for (int note = 4000 ; note > 150 ; note -= 150)
   {
-    tone(7, note, 30);
+    tone(BUZZER_PIN, note, 30);
     delay(20);
   }
-  noTone(7);
+  noTone(BUZZER_PIN);
 }
 
 void snake()
 {
-  myservo.write(180);
-  // turn on servo power
-  // move servo to open lid position
-  // detach() servo control pin
-  // turn off servo power
+  digitalWrite(SERVO_PWR_CONTROL_PIN, HIGH);   // turn on servo power
+  
+  myservo.attach(SERVO_PWM_PIN);  // attaches the servo on pin # to the servo object
+
+  myservo.write(180); // move servo to open lid position
+  delay(2000);
+
+  myservo.detach();  // detach() servo control pin
+
+  digitalWrite(SERVO_PWR_CONTROL_PIN, LOW); // turn off servo power
 }
 
 void factory_reset()
@@ -433,7 +441,7 @@ void record_track()
       long event_delay = start_time - millis(); // grab event delay ***STILL need to truncate this to a byte format for 0-255 (00.0-25.5 second format)
 
       // check for valid userInput, we want to ignore if the user presses anything other than yes, no snake or record.
-      
+
       if (userInput == YES_CMD)
       {
         record_event(track, event_delay, YES, recording_length); // record event delay and and event type into EEPROM
@@ -471,10 +479,10 @@ void record_event(byte track, byte event_delay, byte event_type, byte recording_
 
 int get_start_mem_location(byte track)
 {
-  if (track == 1) return = 1;
-  if (track == 2) return = 100;
-  if (track == 3) return = 200;
-  if (track == 4) return = 300;
-  if (track == 5) return = 400;
-  if (track == 6) return = 500;
+  if (track == 1) return 1;
+  if (track == 2) return 100;
+  if (track == 3) return 200;
+  if (track == 4) return 300;
+  if (track == 5) return 400;
+  if (track == 6) return 500;
 }
