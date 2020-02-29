@@ -126,7 +126,7 @@ byte userInput = 0; // global variable to store current user input command
 
 #define SERVO_PWM_PIN 9
 #define SERVO_PWR_CONTROL_PIN 7
-#define BUZZER_PIN 8
+#define BUZZER_PIN 3
 
 #define LED_pin 13
 
@@ -192,7 +192,7 @@ void setup() {
   digitalWrite(SERVO_PWR_CONTROL_PIN, LOW);
 
   // check for fresh IC. If so, then do a factory reset
-  //if (EEPROM.read(1023) == 255) factory_reset();
+  // if (EEPROM.read(1023) == 255) factory_reset();
 
   Serial.print("Current track ");
   Serial.println(EEPROM.read(0));
@@ -243,11 +243,14 @@ boolean play_track()
 
   int start_mem_location = get_start_mem_location(track);
 
+  Serial.print("start_mem_location: ");
+  Serial.println(start_mem_location);
+
   // Play back the track
   byte event_type = 0; // yes, no, snake, end
   int event_delay = 0; // milliseconds 0-2550
 
-  for (byte pos = start_mem_location ; pos <= (start_mem_location + 99) ; pos += 2) // because each event has a timestamp and type, we increment 2
+  for (int pos = start_mem_location ; pos <= (start_mem_location + 99) ; pos += 2) // because each event has a timestamp and type, we increment 2
   {
     event_delay = int(EEPROM.read(pos));
     event_type = EEPROM.read(pos + 1); // the following memory location is type
@@ -315,7 +318,7 @@ void no()
 void snake()
 {
   digitalWrite(SERVO_PWR_CONTROL_PIN, HIGH);   // turn on servo power
-  
+
   myservo.attach(SERVO_PWM_PIN);  // attaches the servo on pin # to the servo object
 
   myservo.write(180); // move servo to open lid position
@@ -422,12 +425,14 @@ void record_track()
   // as the user "plays in" their track, we will record each event into EEPROM.
   // user hits 'record' button a second time to end the recording.
 
+  while (check_buttons() == true); // wait for release (aka debouce)
+
   byte track = EEPROM.read(0);
 
   Serial.print("Recording track ");
   Serial.println(track);
 
-  long start_time = millis(); // grab the current start time
+  long last_press_time = millis(); // grab the current start time
   boolean recording_status = true; // used to know when we are recording, and when we are done recording.
   byte recording_length = 0; // used to keep track of how many events we've recorded, and where we should record the next event in EEPROM
 
@@ -435,34 +440,53 @@ void record_track()
   {
     // note, we may want to consider flashing (or glowing) the "talk LED" during the recording to indicate that we're recording.
     // I also think a chirp on the buzzer every second might be a good indicator that we're recording.
+    digitalWrite(LED_pin, HIGH);
+    delay(10);
+    digitalWrite(LED_pin, LOW);
+    delay(100);
+
+    long event_delay_long = millis() - last_press_time; // grab event delay ***STILL need to truncate this to a byte format for 0-255 (00.0-25.5 second format)
+    event_delay_long /= 100; // starts as milliseconds, so devide by 100 gets you to 00.0 second format
+    if (event_delay_long > 255) event_delay_long = 255; // max out at 255, cause this is all an EEPROM spot can hold
+    byte event_delay = byte(event_delay_long);
+
+    Serial.print("event_delay");
+    Serial.println(event_delay);
 
     if (check_buttons() == true) // if they press something, let's record it...
     {
-      long event_delay = start_time - millis(); // grab event delay ***STILL need to truncate this to a byte format for 0-255 (00.0-25.5 second format)
-
       // check for valid userInput, we want to ignore if the user presses anything other than yes, no snake or record.
-
+      digitalWrite(LED_pin, HIGH);
       if (userInput == YES_CMD)
       {
+        Serial.println("YES");
         record_event(track, event_delay, YES, recording_length); // record event delay and and event type into EEPROM
         recording_length++;
+        yes();
       }
       else if (userInput == NO_CMD)
       {
+        Serial.println("NO");
         record_event(track, event_delay, NO, recording_length); // record event delay and and event type into EEPROM
         recording_length++;
+        no();
       }
       else if (userInput == SNAKE_CMD)
       {
+        Serial.println("SNAKE");
         record_event(track, event_delay, SNAKE, recording_length); // record event delay and and event type into EEPROM
         recording_length++;
+        snake();
       }
       else if (userInput == RECORD_CMD)
       {
+        Serial.println("END");
         record_event(track, event_delay, END, recording_length); // record an "end command" to EEPROM
         recording_status = false; // user hit "record button" a second time, so stop recording.
       }
-
+      while (check_buttons() == true); // wait for release (aka debouce)
+      last_press_time = millis(); // reset last_press_time so that we can no the next delay time, from this press (that just happened) to the next
+      digitalWrite(LED_pin, LOW);
     }
   }
 }
