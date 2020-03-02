@@ -126,7 +126,7 @@ byte userInput = 0; // global variable to store current user input command
 
 #define SERVO_PWM_PIN 9
 #define SERVO_PWR_CONTROL_PIN 7
-#define BUZZER_PIN 3
+#define BUZZER_PIN 8
 
 #define LED_pin 13
 
@@ -192,7 +192,19 @@ void setup() {
   digitalWrite(SERVO_PWR_CONTROL_PIN, LOW);
 
   // check for fresh IC. If so, then do a factory reset
-  // if (EEPROM.read(1023) == 255) factory_reset();
+  if (EEPROM.read(1023) == 255)
+  {
+    factory_reset();
+    EEPROM.write(1023, 0); // set it to something other than 255,
+    // to indicate that we've done a "1st time" factory reset.
+    // aka this is no longer a fresh IC.
+  }
+
+  // check for manual factory reset - user must hold down "REC" button through a power cycle
+  if (check_buttons() == true)
+  {
+    if (userInput == RECORD_CMD) factory_reset();
+  }
 
   Serial.print("Current track ");
   Serial.println(EEPROM.read(0));
@@ -358,6 +370,7 @@ void factory_reset()
     EEPROM.write( 200 + i, example_track_3[i]); // starts at address 200
     if (example_track_3[i] == END) break;
   }
+  while (check_buttons() == true); // wait for release (aka debouce)
 }
 
 void print_EEPROM()
