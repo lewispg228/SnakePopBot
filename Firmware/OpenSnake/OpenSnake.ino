@@ -128,7 +128,8 @@ byte userInput = 0; // global variable to store current user input command
 #define SERVO_PWR_CONTROL_PIN 7
 #define BUZZER_PIN 8
 
-#define LED_pin 13
+#define RED_LED_pin 13
+#define GREEN_LED_pin 10
 
 // example tracks
 // they are a sequence of events
@@ -177,8 +178,10 @@ void setup() {
   pinMode(4, OUTPUT); // buzzer low side (simon says kit)
   digitalWrite(4, LOW);   // note, other size fo buzzer is 7, and we will call that in tone, later.
 
-  pinMode(LED_pin, OUTPUT); // "talk LED"
-  digitalWrite(LED_pin, LOW);
+  pinMode(RED_LED_pin, OUTPUT); // "NO LED"
+  digitalWrite(RED_LED_pin, LOW);
+  pinMode(GREEN_LED_pin, OUTPUT); // "YES LED"
+  digitalWrite(GREEN_LED_pin, LOW);  
 
   // buttons
   pinMode(RECORD_BUTTON, INPUT_PULLUP);
@@ -206,8 +209,10 @@ void setup() {
     if (userInput == RECORD_CMD) factory_reset();
   }
 
+  byte track = EEPROM.read(0);
   Serial.print("Current track ");
-  Serial.println(EEPROM.read(0));
+  Serial.println(track);
+  blink_track(track);
 
   //print_EEPROM();
 
@@ -278,16 +283,12 @@ boolean play_track()
 
     switch (event_type) {
       case YES:
-        digitalWrite(LED_pin, HIGH);
         Serial.println("YES");
         yes();
-        digitalWrite(LED_pin, LOW);
         break;
       case NO:
-        digitalWrite(LED_pin, HIGH);
         Serial.println("NO");
         no();
-        digitalWrite(LED_pin, LOW);
         break;
       case SNAKE:
         Serial.println("SNAKE");
@@ -309,22 +310,28 @@ boolean play_track()
 
 void yes()
 {
+  digitalWrite(GREEN_LED_pin, HIGH);
+  digitalWrite(RED_LED_pin, LOW);
   for (int note = 150 ; note < 4000 ; note += 150)
   {
     tone(BUZZER_PIN, note, 40);
     delay(30);
   }
   noTone(BUZZER_PIN);
+  digitalWrite(GREEN_LED_pin, LOW);
 }
 
 void no()
 {
+  digitalWrite(RED_LED_pin, HIGH);
+  digitalWrite(GREEN_LED_pin, LOW);
   for (int note = 4000 ; note > 150 ; note -= 150)
   {
     tone(BUZZER_PIN, note, 30);
     delay(20);
   }
   noTone(BUZZER_PIN);
+  digitalWrite(RED_LED_pin, LOW);
 }
 
 void snake()
@@ -410,9 +417,9 @@ void blink_track(byte times)
   delay(1000);
   for (byte i = 0 ; i < times ; i++)
   {
-    digitalWrite(LED_pin, HIGH);
+    digitalWrite(RED_LED_pin, HIGH);
     delay(100);
-    digitalWrite(LED_pin, LOW);
+    digitalWrite(RED_LED_pin, LOW);
     delay(500);
   }
 }
@@ -453,9 +460,9 @@ void record_track()
   {
     // note, we may want to consider flashing (or glowing) the "talk LED" during the recording to indicate that we're recording.
     // I also think a chirp on the buzzer every second might be a good indicator that we're recording.
-    digitalWrite(LED_pin, HIGH);
+    digitalWrite(RED_LED_pin, HIGH);
     delay(10);
-    digitalWrite(LED_pin, LOW);
+    digitalWrite(RED_LED_pin, LOW);
     delay(100);
 
     long event_delay_long = millis() - last_press_time; // grab event delay ***STILL need to truncate this to a byte format for 0-255 (00.0-25.5 second format)
@@ -469,7 +476,7 @@ void record_track()
     if (check_buttons() == true) // if they press something, let's record it...
     {
       // check for valid userInput, we want to ignore if the user presses anything other than yes, no snake or record.
-      digitalWrite(LED_pin, HIGH);
+      digitalWrite(RED_LED_pin, HIGH);
       if (userInput == YES_CMD)
       {
         Serial.println("YES");
@@ -499,7 +506,7 @@ void record_track()
       }
       while (check_buttons() == true); // wait for release (aka debouce)
       last_press_time = millis(); // reset last_press_time so that we can no the next delay time, from this press (that just happened) to the next
-      digitalWrite(LED_pin, LOW);
+      digitalWrite(RED_LED_pin, LOW);
     }
   }
 }
