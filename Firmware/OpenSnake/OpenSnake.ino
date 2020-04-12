@@ -141,15 +141,15 @@ byte userInput = 0; // global variable to store current user input command
 // all tracks must have a last event delay of 0, followed by an event type END
 
 byte example_track_1[] = {
-  70, YES, // first event, delay 7.0 second, sound "yes"
-  70, NO, // second event, delay 7.0 seconds, sound "no"
-  70, NO,
-  70, NO,
-  70, YES,
-  70, YES,
-  0, YES,
-  0, YES,
-  50, SNAKE, // delay 5.0 seconds, pop the snake
+  56, YES, // first event, delay 5.3 seconds, sound "yes"
+  51, YES, // second event, delay 5.1 seconds, sound "yes"
+  2, YES,
+  72, NO,
+  67, NO,
+  43, NO,
+  55, YES,
+  1, YES,
+  15, SNAKE, // delay 1.5 seconds, pop the snake
   0, END
 };
 
