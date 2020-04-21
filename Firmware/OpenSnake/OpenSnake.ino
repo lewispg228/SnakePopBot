@@ -1,102 +1,123 @@
 /*
   Snake In A Can Controller
-  Pete Lewis
-  Soup Can Tech LLC
-  In collaboration with Mario the Maker Magician
+  Written by: Pete Lewis
+  Jan 21st, 2020
+  Jumping Snakes Engineering LLC
+  A collaboration with Mario the Maker Magician
 
-   EEPROM plan
-    We will use EEPROM to store "tracks"
-    A track is a recorded sequence of events.
-    Each event is a button press, which will have a timestamp and a type
-    timestamps will be a value from 0-255
-    a timestamp will represent seconds in 2.1 format
-    for example 010 is 1.0 seconds, 215 is 21.5 seconds
-    This means that the longest timestamp possible is 25.5 seconds
+  This firmware is intended to be used with the Snake in a Can Controller.
+  But it could also be wired up with any Arduino board.
+  It allows the user to blink LEDs, buzz sounds, and turn a servo.
+  The servo holds the latch on a lid, that can let a spring snake jump out.
 
-    Events will be either "yes", "no", "snake", or "end"
-    These will be represented by the values 1,2, or 3.
-    More event types might come later.
+  The controller is often placed inside a brown paper lunch bag, and a robot
+  face is drawn on the front of the bag. Now you've got a robot that can blink,
+  talk (buzz) and pop a snake!
 
-    A track consists of a sequence of timestamps and event types.
+  With these elements in the design, a performer (most likely a magician)
+  can perform a skit using this controller as a robot to interact with.
+  By timing the events of various buzz sounds, LED blinks, and snake pops,
+  the robot can now be part of the show.
 
-    NOTE!! EEPROM location 0 is special and will contain the selected track.
+  The controller comes pre-programmed with one skit that Mario the Maker has
+  written. Visit https://mariothemagician.com/snake to watch a video, learn the 
+  magic show and perform it yourself!
 
-    EEPROM location 1023 is special and will tell us if this is a fresh IC.
-    Fresh ICs come with all EEPROM set to 255, so that means we need to do a factory reset.
-    After we do a factory reset, then we will set location 1023 to a 1, indicating that this is no longer
-    a fresh chip.
-    To cause a factory reset, we will simply write location 1023 to 255, and require a power cycle reset.
+  You can also write your own magic shows using the on-board recording buttons. 
+  See the USER INTERFACE comments below.
 
-    EEPROM locations 1-101 will be track 1.
-    For example a track might look like this:
-    010, 001, 010, 002, 025, 003
-    This track would pause 1.0 seconds,
-    Then play a "yes"
-    Pause for 1.0 seconds,
-    Them play a "no"
-    Pause for 2.5 seconds
-    Then pop open the snake.
+  /////////////// USER INTERFACE //////////////////////////////////////////////////////////
 
-    NOTE, each track can have 50 events.
-    NOTE, we will allow for 5 tracks, so that will requres 500 memory locations.
-    The ATMEGA328 has 1000 EEPROM locations, so we should be fine.
+  To play a track:
+  Turn on power.
+  User sees current track number blink on LED.
+  Press PLAY to play track.
 
-    Mario's original example tracks will be stored in tracks 1,2, and 3.
-    They will also be "backed up" as variable arrays in this sketch.
+  To select a different track:
+  Turn on power.
+  User sees current track number blink on LED.
+  Prest TRACK SELECT (hold down for 3 seconds) to change tracks.
+    -When you press this button, it will increment the current track
+    -It will also "loop back around" to track 1, when you reach the end and press it again.
+    -Each time you press it, you will see the current track number blink on the LED
 
-    USER INTERFACE //////////////////////////////////////////////////////////
+  To Record a new track:
+  Note, you can record over the current track, or you can increment to an empty track.
+  Select desired track you wish to record on (or over).
+  Press REC (hold for 3 seconds) to begin recording.
+  Press "YES", "NO", and "SNAKE" as desired.
+    -It is recommended that you write out your skit, and then just read the lines as you record
+  Press REC again to stop recording.
+  Now your new track is avaialable for playback.
 
-    To play a track:
-    Turn on power.
-    User sees current track number blink on LED.
-    Press PLAY to play track.
+  FACTORY RESET
+  If you do not want to keep your current tracks,
+  and would like to restore the original Mario example track,
+  Turn unit OFF, Press and Hold REC button, then turn the uit ON (while continuing to hold down REC).
+  Watch for red/green blinks.
+  Release button.
+  Now your controller has been set back to it's orginal track and your other tracks have been cleared.
 
-    To select a different track:
-    Turn on power.
-    User sees current track number blink on LED.
-    Prest TRACK SELECT to change tracks.
-      -When you press this button, it will increment the current track
-      -It will also "loop back around" to track 1, when you reach the end and press it again.
-      -Each time you press it, you will see the current track number blink on the LED
+  ///////////////  EEPROM NOTES //////////////////////////////////////////////////////////
+  
+  We will use EEPROM to store "tracks"
+  A track is a recorded sequence of events.
+  Each event is a button press, which will have a timestamp and a type
+  timestamps will be a value from 0-255
+  a timestamp will represent seconds in 2.1 format
+  for example 010 is 1.0 seconds, 215 is 21.5 seconds
+  This means that the longest timestamp possible is 25.5 seconds
 
-    To Record a new track:
-    Note, you can record over the current track, or you can increment to an empty track.
-    Select desired track you wish to record on (or over).
-    Press REC to begin recording.
-    Press "YES", "NO", and "SNAKE" as desired.
-      -It is recommended that you write out your skit, and then just read the lines as you record
-    Press REC to stop recording.
-    Now your new track is avaialable for playback.
+  Events will be either "yes", "no", "snake", or "end"
+  These will be represented by the values 1,2, or 3.
+  More event types might come later.
 
-    FACTORY RESET
-    If you do not want to keep your current tracks,
-    and would like to restore the original Mario example tracks,
-    Hold Down track select, turn unit OFF, then ON (while continuing to hold down TRACK SELECT).
-    Listen for 3 beeps.
-    Release button.
-    Now your controller has been set back to it's orginal tracks and your other tracks have been cleared.
+  A track consists of a sequence of timestamps and event types.
 
-    // Hardware setup:
-    Micro:      ATEMGA328
-    Ext osc:    16 MHz
-    Brownout:   2.7V
-    HIGH FUSE:  0xDE
-    LOW FUSE:   0xFF
-    EXT FUSE:   0xFD
-    LOCK:       0xCF
-    Bootloader: Optiboot
-    Board select: Arduino/Genuino Uno
+  NOTE!! EEPROM location 0 is special and will contain the selected track.
+
+  EEPROM location 1023 is special and will tell us if this is a fresh IC.
+  Fresh ICs come with all EEPROM set to 255, so that means we need to do a factory reset.
+  After we do a factory reset, then we will set location 1023 to a 1, indicating that this is no longer
+  a fresh chip.
+  To cause a factory reset, we will simply write location 1023 to 255, and require a power cycle reset.
+
+  EEPROM locations 1-101 will be track 1.
+  For example a track might look like this:
+  010, 001, 010, 002, 025, 003
+  This track would pause 1.0 seconds,
+  Then play a "yes"
+  Pause for 1.0 seconds,
+  Them play a "no"
+  Pause for 2.5 seconds
+  Then pop open the snake.
+
+  NOTE, each track can have 50 events.
+  NOTE, we will allow for 5 tracks, so that will requres 500 memory locations.
+  The ATMEGA328 has 1000 EEPROM locations, so we should be fine.
+
+  Mario's original example track will be stored in track 1.
+  It is also "backed up" as a variable array in this sketch, and can be restored via factory_reset().
+
+  
+ /////////////// HARDWARE SETUP //////////////////////////////////////////////////////////
+ 
+  Micro:      ATEMGA328
+  Ext osc:    16 MHz
+  Brownout:   2.7V
+  HIGH FUSE:  0xDE
+  LOW FUSE:   0xFF
+  EXT FUSE:   0xFD
+  LOCK:       0xCF
+  Bootloader: Optiboot
+  Board select: Arduino/Genuino Uno
 
 */
 
 #include <Servo.h>
 
 Servo myservo;  // create servo object to control a servo
-// twelve servo objects can be created on most boards
 
-//#define POP 40
-//#include <Servo.h>
-//Servo myservo;  // create servo object to control a servo
 #include <EEPROM.h>
 
 // Event types
@@ -122,6 +143,15 @@ Servo myservo;  // create servo object to control a servo
 #define SNAKE_CMD 6
 
 byte userInput = 0; // global variable to store current user input command
+
+// button counters, used to accept "long presses" on a button.
+// Record and track select are special, they require the user to
+// press the button longer (2 seconds?) for it to cause a valid press.
+// play is instant effective and will begin the current track instantly,
+// because users often want a skit to start playing instantly.
+// This is most important to avoid accidental record or track select presses.
+int recordButtonCounter = 0;
+int incrementTrackButtonCounter = 0;
 
 
 #define SERVO_PWM_PIN 9
@@ -153,16 +183,17 @@ byte example_track_1[] = {
   0, END
 };
 
-byte example_track_2[] = {
+/* The following example tracks are only here to show how to write
+  byte example_track_2[] = {
   20, YES,
   20, NO,
   20, YES,
   20, NO,
   30, SNAKE,
   0, END
-};
+  };
 
-byte example_track_3[] = {
+  byte example_track_3[] = {
   30, YES,
   30, YES,
   30, YES,
@@ -170,18 +201,19 @@ byte example_track_3[] = {
   10, YES,
   40, SNAKE,
   0, END
-};
+  };
+*/
 
 void setup() {
 
-  Serial.begin(57600);
+  Serial.begin(9600);
   pinMode(4, OUTPUT); // buzzer low side (simon says kit)
   digitalWrite(4, LOW);   // note, other size fo buzzer is 7, and we will call that in tone, later.
 
   pinMode(RED_LED_pin, OUTPUT); // "NO LED"
   digitalWrite(RED_LED_pin, LOW);
   pinMode(GREEN_LED_pin, OUTPUT); // "YES LED"
-  digitalWrite(GREEN_LED_pin, LOW);  
+  digitalWrite(GREEN_LED_pin, LOW);
 
   // buttons
   pinMode(RECORD_BUTTON, INPUT_PULLUP);
@@ -203,10 +235,19 @@ void setup() {
     // aka this is no longer a fresh IC.
   }
 
-  // check for manual factory reset - user must hold down "REC" button through a power cycle
-  if (check_buttons() == true)
+  // check for manual factory reset - user must hold down "REC" button through a power cycle,
+  // then continue to hold down for 3 seconds
+  int time_pressed = 0;
+  while ( (check_buttons() == true) && (userInput == RECORD_CMD) ) // user must hold down record for 3 seconds
   {
-    if (userInput == RECORD_CMD) factory_reset();
+    blink_led(RED_LED_pin);
+    delay(1000);
+    time_pressed++;
+    if (time_pressed == 3)
+    {
+      factory_reset();
+      break;
+    }
   }
 
   byte track = EEPROM.read(0);
@@ -229,13 +270,13 @@ void loop()
   {
     switch (userInput) {
       case RECORD_CMD:
-        record_track();
+        if (recordButtonCounter > 200) record_track(); // require the user to hold it down for 2 seconds
         break;
       case PLAY_CMD:
         play_track();
         break;
       case TRACK_CMD:
-        increment_track();
+        if (incrementTrackButtonCounter > 200) increment_track(); // require the user to hold it down for 2 seconds
         break;
       default:
         Serial.print("Invalid userInput: ");
@@ -341,6 +382,31 @@ void snake()
   myservo.attach(SERVO_PWM_PIN);  // attaches the servo on pin # to the servo object
 
   myservo.write(180); // move servo to open lid position
+
+  // make siren sounds and blink red/green leds!!
+  for (int i = 0 ; i <= 3 ; i++)
+  {
+    digitalWrite(RED_LED_pin, HIGH);
+    digitalWrite(GREEN_LED_pin, LOW);
+    for (int note = 150 ; note < 4000 ; note += 150)
+    {
+      tone(BUZZER_PIN, note, 30);
+      delay(10);
+    }
+    digitalWrite(RED_LED_pin, LOW);
+    digitalWrite(GREEN_LED_pin, HIGH);
+    for (int note = 4000 ; note > 150 ; note -= 150)
+    {
+      tone(BUZZER_PIN, note, 30);
+      delay(10);
+    }
+  }
+
+  noTone(BUZZER_PIN);
+
+  digitalWrite(RED_LED_pin, LOW);
+  digitalWrite(GREEN_LED_pin, LOW);
+  
   delay(2000);
 
   myservo.detach();  // detach() servo control pin
@@ -351,6 +417,14 @@ void snake()
 void factory_reset()
 {
   Serial.println("Factory Reset!!");
+
+  // indicate a flashing of red/green (X3) to show user it's happening
+  blink_led(RED_LED_pin);
+  blink_led(GREEN_LED_pin);
+  blink_led(RED_LED_pin);
+  blink_led(GREEN_LED_pin);
+  blink_led(RED_LED_pin);
+  blink_led(GREEN_LED_pin);
 
   // store default track number in EEPROM location 0
   EEPROM.write(0, 1);
@@ -364,19 +438,19 @@ void factory_reset()
     if (example_track_1[i] == END) break;
   }
 
-  // example track 2
-  for (int i = 0 ; i < sizeof(example_track_2) ; i++)
-  {
-    EEPROM.write( 100 + i, example_track_2[i]); // starts at address 100
-    if (example_track_2[i] == END) break;
-  }
-
-  // example track 3
-  for (int i = 0 ; i < sizeof(example_track_3) ; i++)
-  {
-    EEPROM.write( 200 + i, example_track_3[i]); // starts at address 200
-    if (example_track_3[i] == END) break;
-  }
+  //  // example track 2
+  //  for (int i = 0 ; i < sizeof(example_track_2) ; i++)
+  //  {
+  //    EEPROM.write( 100 + i, example_track_2[i]); // starts at address 100
+  //    if (example_track_2[i] == END) break;
+  //  }
+  //
+  //  // example track 3
+  //  for (int i = 0 ; i < sizeof(example_track_3) ; i++)
+  //  {
+  //    EEPROM.write( 200 + i, example_track_3[i]); // starts at address 200
+  //    if (example_track_3[i] == END) break;
+  //  }
   while (check_buttons() == true); // wait for release (aka debouce)
 }
 
@@ -424,12 +498,30 @@ void blink_track(byte times)
   }
 }
 
+void blink_led(byte pin)
+{
+  digitalWrite(pin, HIGH);
+  delay(100);
+  digitalWrite(pin, LOW);
+}
+
 boolean check_buttons()
 {
   userInput = 0;
-  if (digitalRead(RECORD_BUTTON) == false) userInput = RECORD_CMD;
-  else if (digitalRead(PLAY_BUTTON) == false) userInput = PLAY_CMD;
-  else if (digitalRead(TRACK_SELECT_BUTTON) == false) userInput = TRACK_CMD;
+  if (digitalRead(RECORD_BUTTON) == true) recordButtonCounter = 0; // user released record button, reset counter
+  if (digitalRead(TRACK_SELECT_BUTTON) == true) incrementTrackButtonCounter = 0; // user released track sel button, reset counter
+
+  if (digitalRead(PLAY_BUTTON) == false) userInput = PLAY_CMD;
+  else if (digitalRead(RECORD_BUTTON) == false) // RECORD (note, requires long press)
+  {
+    recordButtonCounter++;
+    userInput = RECORD_CMD;
+  }
+  else if (digitalRead(TRACK_SELECT_BUTTON) == false) // increment track (note, requires long press)
+  {
+    incrementTrackButtonCounter++;
+    userInput = TRACK_CMD;
+  }
   else if (digitalRead(YES_BUTTON) == false) userInput = YES_CMD;
   else if (digitalRead(NO_BUTTON) == false) userInput = NO_CMD;
   else if (digitalRead(SNAKE_BUTTON) == false) userInput = SNAKE_CMD;
@@ -444,6 +536,8 @@ void record_track()
   // we need to keep track of time (using millis()) and record event times and event types.
   // as the user "plays in" their track, we will record each event into EEPROM.
   // user hits 'record' button a second time to end the recording.
+
+  blink_led(RED_LED_pin); // indicate we are about to record
 
   while (check_buttons() == true); // wait for release (aka debouce)
 
