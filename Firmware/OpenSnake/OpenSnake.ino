@@ -406,11 +406,9 @@ void snake()
 
   digitalWrite(RED_LED_pin, LOW);
   digitalWrite(GREEN_LED_pin, LOW);
-  
-  delay(2000);
 
   myservo.detach();  // detach() servo control pin
-
+  
   digitalWrite(SERVO_PWR_CONTROL_PIN, LOW); // turn off servo power
 }
 
