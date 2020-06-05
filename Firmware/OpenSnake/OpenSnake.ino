@@ -207,6 +207,8 @@ byte example_track_1[] = {
 void setup() {
 
   Serial.begin(9600);
+  Serial.println("OpenSnake Firmware Version 1.0");
+  
   pinMode(4, OUTPUT); // buzzer low side (simon says kit)
   digitalWrite(4, LOW);   // note, other size fo buzzer is 7, and we will call that in tone, later.
 
