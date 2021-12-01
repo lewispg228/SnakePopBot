@@ -1,12 +1,29 @@
 /*
   Snake In A Can Controller
-  Written by: Pete Lewis
-  Jan 21st, 2020
+  Written by: Pete Lewis, with contributions from Jeff Haas
   Jumping Snakes Engineering LLC
   A collaboration with Mario the Maker Magician
+  https://www.mariothemagician.com/
+  
+  Original start date Jan 21st, 2020
+  
+  License: MIT. See license file for more information but you can
+  basically do whatever you want with this code.
+
+  Jan 12th, 2021
+  This firmware also has contributions from Jeff Haas.
+  Big thanks for the laughing, crying and happy birthday song code!
+
+  Also thanks to the Adafruit animal sounds example code found here:
+  https://learn.adafruit.com/adafruit-trinket-modded-stuffed-animal/animal-sounds
+  
+  And JSHENGs happy birthday example code found here:
+  https://create.arduino.cc/projecthub/jsheng/happy-birthday-lights-and-sounds-1745cd
 
   This firmware is intended to be used with the Snake in a Can Controller.
-  But it could also be wired up with any Arduino board.
+  That product, videos and more info can be found here:
+  https://www.mariothemagician.com/snake
+  Note, it could also be wired up with any Arduino board.
   It allows the user to blink LEDs, buzz sounds, and turn a servo.
   The servo holds the latch on a lid, that can let a spring snake jump out.
 
@@ -20,10 +37,10 @@
   the robot can now be part of the show.
 
   The controller comes pre-programmed with one skit that Mario the Maker has
-  written. Visit https://mariothemagician.com/snake to watch a video, learn the 
+  written. Visit https://mariothemagician.com/snake to watch a video, learn the
   magic show and perform it yourself!
 
-  You can also write your own magic shows using the on-board recording buttons. 
+  You can also write your own magic shows using the on-board recording buttons.
   See the USER INTERFACE comments below.
 
   /////////////// USER INTERFACE //////////////////////////////////////////////////////////
@@ -50,16 +67,41 @@
   Press REC again to stop recording.
   Now your new track is avaialable for playback.
 
+  *  Note, new sounds have been added into firmware version 1.1
+  *  Crying, laughing and happy birthday.
+  *  To access these additional sounds, you must hold down the "TRACK SELECT" button before
+  *  pressing the other buttons. The "TRACK SELECT" button acts like a "shift" key.
+  *  TRACK SELECT + YES = LAUGH
+  *  TRACK SELECT + NO = CRY
+  *  TRACK SELECT + SNAKE = HAPPY BIRTHDAY
+
   FACTORY RESET
   If you do not want to keep your current tracks,
   and would like to restore the original Mario example track,
-  Turn unit OFF, Press and Hold REC button, then turn the uit ON (while continuing to hold down REC).
-  Watch for red/green blinks.
-  Release button.
+  (1) Turn unit OFF
+  (2) Press and Hold REC button
+  (3) Turn the unit ON (while continuing to hold down REC)
+  (4) Watch for 3 red blinks
+  (5) Release button
   Now your controller has been set back to it's orginal track and your other tracks have been cleared.
 
-  ///////////////  EEPROM NOTES //////////////////////////////////////////////////////////
+  AUTOPLAY
+  When autoplay is engaged, your controller will begin the selected track on power up (without requiring you to press the PLAY button).
+  This is useful for performances, because you can more easily access the power slide switch (on the battery pack).
+  To turn on autoplay:
+  (1) Turn unit OFF
+  (2) Press and Hold PLAY button
+  (3) Turn the unit ON (while continuing to hold down PLAY)
+  (4) Watch for 3 green blinks
+  (5) Release button
+  Now autoplay has been engaged. Each time you power on your controller, it will begin the selected track.
+  To turn off autoplay (aka go back into "normal mode"):
+  Repeat the process above.
+  Note, each time you do the process above it will effectivly "toggle" autoplay on or off.
+  Also, a factory_reset() will also set autoplay to OFF.
   
+  ///////////////  EEPROM NOTES //////////////////////////////////////////////////////////
+
   We will use EEPROM to store "tracks"
   A track is a recorded sequence of events.
   Each event is a button press, which will have a timestamp and a type
@@ -99,9 +141,9 @@
   Mario's original example track will be stored in track 1.
   It is also "backed up" as a variable array in this sketch, and can be restored via factory_reset().
 
-  
- /////////////// HARDWARE SETUP //////////////////////////////////////////////////////////
- 
+
+  /////////////// HARDWARE SETUP //////////////////////////////////////////////////////////
+
   Micro:      ATEMGA328
   Ext osc:    16 MHz
   Brownout:   2.7V
@@ -120,10 +162,20 @@ Servo myservo;  // create servo object to control a servo
 
 #include <EEPROM.h>
 
+#define EEPROM_LOCATION_TRACK 0 // to store which track we have selected, 0-5
+#define EEPROM_LOCATION_AUTOPLAY 1023 // to store if we're in Autoplay (1) or not (0)
+#define AUTOPLAY_ON 1
+#define AUTOPLAY_OFF 0
+
+#include "pitches.h" // used for the happy birthday function
+
 // Event types
 #define YES 1
 #define NO 2
 #define SNAKE 3
+#define LAUGH 4
+#define CRY 5
+#define HAPPY 6
 #define END 99 // had to choose something, so went with this, wanted to leave room for other future event types
 
 // Control Buttons
@@ -141,6 +193,9 @@ Servo myservo;  // create servo object to control a servo
 #define YES_CMD 4
 #define NO_CMD 5
 #define SNAKE_CMD 6
+#define LAUGH_CMD 7
+#define CRY_CMD 8
+#define HAPPY_CMD 9
 
 byte userInput = 0; // global variable to store current user input command
 
@@ -150,8 +205,14 @@ byte userInput = 0; // global variable to store current user input command
 // play is instant effective and will begin the current track instantly,
 // because users often want a skit to start playing instantly.
 // This is most important to avoid accidental record or track select presses.
+//
+// Note, snake button was also added in FW ver 1.1 to allow the user to
+// cause a snake pop to set the servo horn. If you hold down servo for a
+// long press, then it calls the snake function moving the servo to the
+// open position.
 int recordButtonCounter = 0;
 int incrementTrackButtonCounter = 0;
+int snakeButtonCounter = 0;
 
 
 #define SERVO_PWM_PIN 9
@@ -207,8 +268,8 @@ byte example_track_1[] = {
 void setup() {
 
   Serial.begin(9600);
-  Serial.println("OpenSnake Firmware Version 1.0");
-  
+  Serial.println("OpenSnake Firmware Version 1.1");
+
   pinMode(4, OUTPUT); // buzzer low side (simon says kit)
   digitalWrite(4, LOW);   // note, other size fo buzzer is 7, and we will call that in tone, later.
 
@@ -229,10 +290,9 @@ void setup() {
   digitalWrite(SERVO_PWR_CONTROL_PIN, LOW);
 
   // check for fresh IC. If so, then do a factory reset
-  if (EEPROM.read(1023) == 255)
+  if (EEPROM.read(EEPROM_LOCATION_AUTOPLAY) == 255) // fresh ICs have all of their EEPROM values at 255, so we only need to check one location
   {
     factory_reset();
-    EEPROM.write(1023, 0); // set it to something other than 255,
     // to indicate that we've done a "1st time" factory reset.
     // aka this is no longer a fresh IC.
   }
@@ -252,7 +312,30 @@ void setup() {
     }
   }
 
-  byte track = EEPROM.read(0);
+  // check for autoplay toggle on/off - user must hold down "PLAY" button through a power cycle,
+  // then continue to hold down for 3 seconds
+  time_pressed = 0;
+  while ( (check_buttons() == true) && (userInput == PLAY_CMD) ) // user must hold down play for 3 seconds
+  {
+    blink_led(GREEN_LED_pin);
+    delay(1000);
+    time_pressed++;
+    if (time_pressed == 3)
+    {
+      toggle_autoplay_onoff();
+      break;
+    }
+  }
+
+  if (EEPROM.read(EEPROM_LOCATION_AUTOPLAY) == AUTOPLAY_ON) 
+  {
+    Serial.println("Autoplay on.");
+    play_track();
+    while (1);
+  }
+  
+  byte track = EEPROM.read(EEPROM_LOCATION_TRACK);
+  Serial.println("Autoplay off.");
   Serial.print("Current track ");
   Serial.println(track);
   blink_track(track);
@@ -280,6 +363,9 @@ void loop()
       case TRACK_CMD:
         if (incrementTrackButtonCounter > 200) increment_track(); // require the user to hold it down for 2 seconds
         break;
+      case SNAKE_CMD:
+        if (snakeButtonCounter > 200) snake(); // requires the user to hold it down for 2 seconds
+        break;
       default:
         Serial.print("Invalid userInput: ");
         Serial.println(userInput);
@@ -291,7 +377,7 @@ void loop()
 
 boolean play_track()
 {
-  byte track = EEPROM.read(0);
+  byte track = EEPROM.read(EEPROM_LOCATION_TRACK);
 
   Serial.print("Playing track ");
   Serial.println(track);
@@ -336,6 +422,18 @@ boolean play_track()
       case SNAKE:
         Serial.println("SNAKE");
         snake();
+        break;
+      case LAUGH:
+        Serial.println("LAUGH");
+        laugh();
+        break;
+      case CRY:
+        Serial.println("CRY");
+        cry();
+        break;
+      case HAPPY:
+        Serial.println("HAPPY BIRTHDAY");
+        happy_birthday();
         break;
       case END:
         Serial.println("END");
@@ -410,7 +508,7 @@ void snake()
   digitalWrite(GREEN_LED_pin, LOW);
 
   myservo.detach();  // detach() servo control pin
-  
+
   digitalWrite(SERVO_PWR_CONTROL_PIN, LOW); // turn off servo power
 }
 
@@ -427,7 +525,9 @@ void factory_reset()
   blink_led(GREEN_LED_pin);
 
   // store default track number in EEPROM location 0
-  EEPROM.write(0, 1);
+  EEPROM.write(EEPROM_LOCATION_TRACK, 1);
+
+  EEPROM.write(EEPROM_LOCATION_AUTOPLAY, AUTOPLAY_OFF); // turn autoplay off
 
   // store example tracks in track EEPROM locations
 
@@ -470,14 +570,14 @@ void print_EEPROM()
 
 void set_track(byte track)
 {
-  EEPROM.write(0, track); // store it in special EEPROM location for reading at play_track
+  EEPROM.write(EEPROM_LOCATION_TRACK, track); // store it in special EEPROM location for reading at play_track
   // and to save through a power cycle.
 }
 
 void increment_track()
 {
   Serial.println("Incrementing track...");
-  byte track = EEPROM.read(0);
+  byte track = EEPROM.read(EEPROM_LOCATION_TRACK);
   track++;
   if (track == 6) track = 1; // loop back to track 1 (we only have EEPROM room for 5 total tracks)
   Serial.print("track: ");
@@ -510,6 +610,7 @@ boolean check_buttons()
   userInput = 0;
   if (digitalRead(RECORD_BUTTON) == true) recordButtonCounter = 0; // user released record button, reset counter
   if (digitalRead(TRACK_SELECT_BUTTON) == true) incrementTrackButtonCounter = 0; // user released track sel button, reset counter
+  if (digitalRead(SNAKE_BUTTON) == true) snakeButtonCounter = 0; // user released snake button, reset counter
 
   if (digitalRead(PLAY_BUTTON) == false) userInput = PLAY_CMD;
   else if (digitalRead(RECORD_BUTTON) == false) // RECORD (note, requires long press)
@@ -519,12 +620,19 @@ boolean check_buttons()
   }
   else if (digitalRead(TRACK_SELECT_BUTTON) == false) // increment track (note, requires long press)
   {
-    incrementTrackButtonCounter++;
-    userInput = TRACK_CMD;
+    incrementTrackButtonCounter++; // needed to know if it is gonna be a long press
+    if (digitalRead(YES_BUTTON) == false) userInput = LAUGH_CMD; // "shift yes" (aka track_select + yes) = laugh
+    else if (digitalRead(NO_BUTTON) == false) userInput = CRY_CMD; // "shift no" (aka track_select + no) = cry
+    else if (digitalRead(SNAKE_BUTTON) == false) userInput = HAPPY_CMD; // "shift snake" (aka track_select + snake) = happy birthday
+    else userInput = TRACK_CMD; // if no other buttons are held down a the same time, then it's just a plain old "track select command".
   }
   else if (digitalRead(YES_BUTTON) == false) userInput = YES_CMD;
   else if (digitalRead(NO_BUTTON) == false) userInput = NO_CMD;
-  else if (digitalRead(SNAKE_BUTTON) == false) userInput = SNAKE_CMD;
+  else if (digitalRead(SNAKE_BUTTON) == false)
+  {
+    snakeButtonCounter++;
+    userInput = SNAKE_CMD;
+  }
   if (userInput) return true;
   else return false;
 }
@@ -541,7 +649,7 @@ void record_track()
 
   while (check_buttons() == true); // wait for release (aka debouce)
 
-  byte track = EEPROM.read(0);
+  byte track = EEPROM.read(EEPROM_LOCATION_TRACK);
 
   Serial.print("Recording track ");
   Serial.println(track);
@@ -592,14 +700,37 @@ void record_track()
         recording_length++;
         snake();
       }
+      else if (userInput == LAUGH_CMD)
+      {
+        Serial.println("LAUGH");
+        record_event(track, event_delay, LAUGH, recording_length); // record event delay and and event type into EEPROM
+        recording_length++;
+        laugh();
+      }
+      else if (userInput == CRY_CMD)
+      {
+        Serial.println("CRY");
+        record_event(track, event_delay, CRY, recording_length); // record event delay and and event type into EEPROM
+        recording_length++;
+        cry();
+      }
+      else if (userInput == HAPPY_CMD)
+      {
+        Serial.println("HAPPY BIRTHDAY");
+        record_event(track, event_delay, HAPPY, recording_length); // record event delay and and event type into EEPROM
+        recording_length++;
+        happy_birthday();
+      }
       else if (userInput == RECORD_CMD)
       {
         Serial.println("END");
         record_event(track, event_delay, END, recording_length); // record an "end command" to EEPROM
         recording_status = false; // user hit "record button" a second time, so stop recording.
       }
-      while (check_buttons() == true); // wait for release (aka debouce)
-      last_press_time = millis(); // reset last_press_time so that we can no the next delay time, from this press (that just happened) to the next
+      //while (check_buttons() == true); // wait for release (aka debouce)
+      //delay(10); // debounce
+      if ((userInput == TRACK_CMD) || (userInput == PLAY_CMD)) ; // don't do any recording and don't reset last_press_time
+      else last_press_time = millis(); // reset last_press_time so that we can no the next delay time, from this press (that just happened) to the next
       digitalWrite(RED_LED_pin, LOW);
     }
   }
@@ -623,4 +754,162 @@ int get_start_mem_location(byte track)
   if (track == 4) return 300;
   if (track == 5) return 400;
   if (track == 6) return 500;
+}
+
+/*
+ * Janurary, 2021
+ * Cry, Laugh, PlayTone Functions were adapted from Adafruit animal sounds
+ * by Magician/hacker Jeff Haas. Thanks Jeff!!
+ * 
+ * https://learn.adafruit.com/adafruit-trinket-modded-stuffed-animal/animal-sounds
+ * 
+ * How these sound effects work
+ * Example from cry(), below.
+ * 
+ * (i=500; i<700; i+=2)
+ * This line, taken apart, means:
+ * 
+ * i=500 // Initial number (500) is the starting tone.
+ *       // Lower numbers = higher tones
+ * 
+ * i+=2 // Decrease tone each time through the loop.  Replace with 3 to get faster effect.
+ *      // Keep consistent in the different sections of the function for better effect.
+ * 
+ * i<700 // How many times through the loop (700 - 500 = 200 times).
+ *       // Adjust difference to shorten or lengthen effect.
+ *       // Use < to lower the sound as it plays, > to raise it.
+ *       // Refer to cry() and laugh() functions.
+*/
+void cry() {  // Like a dog whining
+  pinMode(BUZZER_PIN, OUTPUT);
+  int crydelay = 500;
+
+  uint16_t i;
+  digitalWrite(GREEN_LED_pin, LOW);
+  digitalWrite(RED_LED_pin, HIGH);
+  for (i = 500; i < 700; i += 3) // vary "ooo" down
+    playTone(i, 8);
+  digitalWrite(RED_LED_pin, LOW);
+  delay(crydelay);
+
+  digitalWrite(RED_LED_pin, HIGH);
+  for (i = 600; i < 800; i += 3) // vary "ooo" down
+    playTone(i, 8);
+  digitalWrite(RED_LED_pin, LOW);
+  delay(crydelay);
+
+  digitalWrite(RED_LED_pin, HIGH);
+  for (i = 700; i < 950; i += 3) // vary "ooo" down
+    playTone(i, 8);
+  digitalWrite(RED_LED_pin, LOW);
+
+}
+
+void laugh() {  // Make this different than the cry - "Ha ha ha ha"
+  pinMode(BUZZER_PIN, OUTPUT);
+  int laughdelay = 200;
+  uint16_t i;
+
+  digitalWrite(RED_LED_pin, LOW);
+  digitalWrite(GREEN_LED_pin, HIGH);
+  for (i = 650; i > 525; i -= 3) // vary up
+    playTone(i, 8);
+  digitalWrite(GREEN_LED_pin, LOW);
+  delay(laughdelay);
+
+  digitalWrite(GREEN_LED_pin, HIGH);
+  for (i = 800; i > 660; i -= 3) //
+    playTone(i, 8);
+  digitalWrite(GREEN_LED_pin, LOW);
+  delay(laughdelay);
+
+  digitalWrite(GREEN_LED_pin, HIGH);
+  for (i = 900; i > 745; i -= 3) //
+    playTone(i, 8);
+  digitalWrite(GREEN_LED_pin, LOW);
+  delay(laughdelay);
+
+  digitalWrite(GREEN_LED_pin, HIGH);
+  for (i = 990; i > 850; i -= 3) //
+    playTone(i, 8);
+  digitalWrite(GREEN_LED_pin, LOW);
+}
+
+// play tone on a piezo speaker: tone shorter values produce higher frequencies
+//  which is opposite beep() but avoids some math delay - similar to code by Erin Robotgrrl
+
+void playTone(uint16_t tone1, uint16_t duration) {
+  if (tone1 < 50 || tone1 > 15000) return; // these do not play on a piezo
+  for (long i = 0; i < duration * 1000L; i += tone1 * 2) {
+    digitalWrite(BUZZER_PIN , HIGH);
+    delayMicroseconds(tone1);
+    digitalWrite(BUZZER_PIN , LOW);
+    delayMicroseconds(tone1);
+  }
+}
+
+/*
+ * Janurary, 2021
+ * Happy birthday
+ * Plays happy birthday on the buzzer with random blinking LEDs
+ * 
+ * The following happy_brithday() function was adapted from JSHENG version on the arduino website here:
+ * https://create.arduino.cc/projecthub/jsheng/happy-birthday-lights-and-sounds-1745cd
+ * 
+ * Includes melody[] noteDurations[], then a for loop to play the song.
+ * Also creates a randome pattern of on/off with the red/green leds, but changes them on the beat
+ * 
+ * Note, this uses a header file called pitches.h, included at the top of this sketch
+*/
+void happy_birthday()
+{
+  //notes in the melody
+  int melody[] = {
+    NOTE_C4, NOTE_C4, NOTE_D4, NOTE_C4, NOTE_F4, NOTE_E4,
+    NOTE_C4, NOTE_C4, NOTE_D4, NOTE_C4, NOTE_G4, NOTE_F4,
+    NOTE_C4, NOTE_C4, NOTE_C5, NOTE_A4, NOTE_F4, NOTE_E4, NOTE_D4,
+    NOTE_AS4, NOTE_AS4, NOTE_A4, NOTE_F4, NOTE_G4, NOTE_F4
+  };
+
+  //note durations: 4 = quarter note, 8 = eight note, etc.
+  int noteDurations[] = {
+    8, 8, 4, 4, 4, 2, 8, 8, 4, 4, 4, 2, 8, 8, 4, 4, 4, 4, 4, 8, 8, 4, 4, 4, 2,
+  };
+
+  for (int thisNote = 0 ; thisNote < 25 ; thisNote++) {
+    // Using a random number, we will choose to turn on green, red, or both
+    int randomChoice = random(0, 3);
+    if (randomChoice == 0) digitalWrite (GREEN_LED_pin, HIGH);
+    else if (randomChoice == 1) digitalWrite (RED_LED_pin, HIGH);
+    else if (randomChoice == 2)
+    {
+      digitalWrite (GREEN_LED_pin, HIGH);
+      digitalWrite (RED_LED_pin, HIGH);
+    }
+
+    int noteDuration = 1130 / noteDurations[thisNote];
+    tone (BUZZER_PIN, melody[thisNote], noteDuration);
+
+    int pause = noteDuration * 1.275;
+    delay (pause);
+
+    noTone(BUZZER_PIN);
+    digitalWrite(GREEN_LED_pin, LOW);
+    digitalWrite(RED_LED_pin, LOW);
+  }
+}
+
+
+void toggle_autoplay_onoff()
+{
+  if (EEPROM.read(EEPROM_LOCATION_AUTOPLAY) == AUTOPLAY_ON) 
+  {
+    EEPROM.write(EEPROM_LOCATION_AUTOPLAY, AUTOPLAY_OFF);
+    Serial.println("Autoplay off.");
+  }
+  else 
+  {
+    EEPROM.write(EEPROM_LOCATION_AUTOPLAY, AUTOPLAY_ON);
+    Serial.println("Autoplay on.");
+  }
 }
