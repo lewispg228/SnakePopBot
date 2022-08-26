@@ -4,9 +4,9 @@
   Jumping Snakes Engineering LLC
   A collaboration with Mario the Maker Magician
   https://www.mariothemagician.com/
-  
+
   Original start date Jan 21st, 2020
-  
+
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
@@ -16,7 +16,7 @@
 
   Also thanks to the Adafruit animal sounds example code found here:
   https://learn.adafruit.com/adafruit-trinket-modded-stuffed-animal/animal-sounds
-  
+
   And JSHENGs happy birthday example code found here:
   https://create.arduino.cc/projecthub/jsheng/happy-birthday-lights-and-sounds-1745cd
 
@@ -67,13 +67,13 @@
   Press REC again to stop recording.
   Now your new track is avaialable for playback.
 
-  *  Note, new sounds have been added into firmware version 1.1
-  *  Crying, laughing and happy birthday.
-  *  To access these additional sounds, you must hold down the "TRACK SELECT" button before
-  *  pressing the other buttons. The "TRACK SELECT" button acts like a "shift" key.
-  *  TRACK SELECT + YES = LAUGH
-  *  TRACK SELECT + NO = CRY
-  *  TRACK SELECT + SNAKE = HAPPY BIRTHDAY
+     Note, new sounds have been added into firmware version 1.1
+     Crying, laughing and happy birthday.
+     To access these additional sounds, you must hold down the "TRACK SELECT" button before
+     pressing the other buttons. The "TRACK SELECT" button acts like a "shift" key.
+     TRACK SELECT + YES = LAUGH
+     TRACK SELECT + NO = CRY
+     TRACK SELECT + SNAKE = HAPPY BIRTHDAY
 
   FACTORY RESET
   If you do not want to keep your current tracks,
@@ -99,7 +99,7 @@
   Repeat the process above.
   Note, each time you do the process above it will effectivly "toggle" autoplay on or off.
   Also, a factory_reset() will also set autoplay to OFF.
-  
+
   ///////////////  EEPROM NOTES //////////////////////////////////////////////////////////
 
   We will use EEPROM to store "tracks"
@@ -327,13 +327,13 @@ void setup() {
     }
   }
 
-  if (EEPROM.read(EEPROM_LOCATION_AUTOPLAY) == AUTOPLAY_ON) 
+  if (EEPROM.read(EEPROM_LOCATION_AUTOPLAY) == AUTOPLAY_ON)
   {
     Serial.println("Autoplay on.");
     play_track();
     while (1);
   }
-  
+
   byte track = EEPROM.read(EEPROM_LOCATION_TRACK);
   Serial.println("Autoplay off.");
   Serial.print("Current track ");
@@ -757,28 +757,28 @@ int get_start_mem_location(byte track)
 }
 
 /*
- * Janurary, 2021
- * Cry, Laugh, PlayTone Functions were adapted from Adafruit animal sounds
- * by Magician/hacker Jeff Haas. Thanks Jeff!!
- * 
- * https://learn.adafruit.com/adafruit-trinket-modded-stuffed-animal/animal-sounds
- * 
- * How these sound effects work
- * Example from cry(), below.
- * 
- * (i=500; i<700; i+=2)
- * This line, taken apart, means:
- * 
- * i=500 // Initial number (500) is the starting tone.
- *       // Lower numbers = higher tones
- * 
- * i+=2 // Decrease tone each time through the loop.  Replace with 3 to get faster effect.
- *      // Keep consistent in the different sections of the function for better effect.
- * 
- * i<700 // How many times through the loop (700 - 500 = 200 times).
- *       // Adjust difference to shorten or lengthen effect.
- *       // Use < to lower the sound as it plays, > to raise it.
- *       // Refer to cry() and laugh() functions.
+   Janurary, 2021
+   Cry, Laugh, PlayTone Functions were adapted from Adafruit animal sounds
+   by Magician/hacker Jeff Haas. Thanks Jeff!!
+
+   https://learn.adafruit.com/adafruit-trinket-modded-stuffed-animal/animal-sounds
+
+   How these sound effects work
+   Example from cry(), below.
+
+   (i=500; i<700; i+=2)
+   This line, taken apart, means:
+
+   i=500 // Initial number (500) is the starting tone.
+         // Lower numbers = higher tones
+
+   i+=2 // Decrease tone each time through the loop.  Replace with 3 to get faster effect.
+        // Keep consistent in the different sections of the function for better effect.
+
+   i<700 // How many times through the loop (700 - 500 = 200 times).
+         // Adjust difference to shorten or lengthen effect.
+         // Use < to lower the sound as it plays, > to raise it.
+         // Refer to cry() and laugh() functions.
 */
 void cry() {  // Like a dog whining
   pinMode(BUZZER_PIN, OUTPUT);
@@ -849,17 +849,17 @@ void playTone(uint16_t tone1, uint16_t duration) {
 }
 
 /*
- * Janurary, 2021
- * Happy birthday
- * Plays happy birthday on the buzzer with random blinking LEDs
- * 
- * The following happy_brithday() function was adapted from JSHENG version on the arduino website here:
- * https://create.arduino.cc/projecthub/jsheng/happy-birthday-lights-and-sounds-1745cd
- * 
- * Includes melody[] noteDurations[], then a for loop to play the song.
- * Also creates a randome pattern of on/off with the red/green leds, but changes them on the beat
- * 
- * Note, this uses a header file called pitches.h, included at the top of this sketch
+   Janurary, 2021
+   Happy birthday
+   Plays happy birthday on the buzzer with random blinking LEDs
+
+   The following happy_brithday() function was adapted from JSHENG version on the arduino website here:
+   https://create.arduino.cc/projecthub/jsheng/happy-birthday-lights-and-sounds-1745cd
+
+   Includes melody[] noteDurations[], then a for loop to play the song.
+   Also creates a randome pattern of on/off with the red/green leds, but changes them on the beat
+
+   Note, this uses a header file called pitches.h, included at the top of this sketch
 */
 void happy_birthday()
 {
@@ -902,12 +902,12 @@ void happy_birthday()
 
 void toggle_autoplay_onoff()
 {
-  if (EEPROM.read(EEPROM_LOCATION_AUTOPLAY) == AUTOPLAY_ON) 
+  if (EEPROM.read(EEPROM_LOCATION_AUTOPLAY) == AUTOPLAY_ON)
   {
     EEPROM.write(EEPROM_LOCATION_AUTOPLAY, AUTOPLAY_OFF);
     Serial.println("Autoplay off.");
   }
-  else 
+  else
   {
     EEPROM.write(EEPROM_LOCATION_AUTOPLAY, AUTOPLAY_ON);
     Serial.println("Autoplay on.");
