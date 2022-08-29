@@ -10,7 +10,7 @@ $firmware .= "/home/pi/$firmware"
 # Here are some commonly used "part no"s in avrdude at SFE
 # UN-comment the one you wish to use, or plug in something different
 # Use "avrdude -p?" for a list of supported devices
-DEVICE=atmega328p
+DEVICE=atmega328
 #DEVICE=m32u4
 #DEVICE=t2313
 

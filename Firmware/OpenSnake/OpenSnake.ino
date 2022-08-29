@@ -14,6 +14,10 @@
   This firmware also has contributions from Jeff Haas.
   Big thanks for the laughing, crying and happy birthday song code!
 
+  Aug 26th, 2022
+  Adding in production testing method.
+  To engage, hold down YES through a power cycle.
+
   Also thanks to the Adafruit animal sounds example code found here:
   https://learn.adafruit.com/adafruit-trinket-modded-stuffed-animal/animal-sounds
 
@@ -268,7 +272,7 @@ byte example_track_1[] = {
 void setup() {
 
   Serial.begin(9600);
-  Serial.println("OpenSnake Firmware Version 1.1");
+  Serial.println("OpenSnake Firmware Version 1.2");
 
   pinMode(4, OUTPUT); // buzzer low side (simon says kit)
   digitalWrite(4, LOW);   // note, other size fo buzzer is 7, and we will call that in tone, later.
@@ -323,6 +327,21 @@ void setup() {
     if (time_pressed == 3)
     {
       toggle_autoplay_onoff();
+      break;
+    }
+  }
+
+  // check for production testing method - user must hold down "YES" button through a power cycle,
+  // then continue to hold down for 200 milliseconds
+  time_pressed = 0;
+  while ( (check_buttons() == true) && (userInput == YES_CMD) ) // user must hold down yes for 200ms
+  {
+    blink_led(GREEN_LED_pin);
+    delay(100);
+    time_pressed++;
+    if (time_pressed == 2)
+    {
+      production_testing();
       break;
     }
   }
@@ -912,4 +931,163 @@ void toggle_autoplay_onoff()
     EEPROM.write(EEPROM_LOCATION_AUTOPLAY, AUTOPLAY_ON);
     Serial.println("Autoplay on.");
   }
+}
+
+// production testing
+// this is only used in production and helps quickly test every feature.
+
+// check each button works properly with no jumpers.
+// to do this, we will wait to see each button is pressed in a sequence.
+// The sequence will be REC, PLAY, TRACK, SNAKE, NO, YES.
+// When each button is pressed, we will also check to see that all the other buttons are still HIGH.
+// This extra check allows us to know if there is a jumper between GPIOs.
+// We will also blink LEDs when each button is pressed to give some feedback to tech and verify LEDs.
+// Then we will move the servo and beep the buzzer.
+// Test done.
+
+void production_testing()
+{
+  Serial.println("Production Testing!!");
+
+  // indicate a flashing of red/green to show user it's happening
+  blink_led(RED_LED_pin);
+  blink_led(GREEN_LED_pin);
+
+  while (check_buttons() == true); // wait for release (aka debouce)
+
+  production_test_buttons();
+  production_test_servo_buzz();
+}
+
+boolean production_test_buttons(void)
+{
+  while (check_buttons() == false); // wait for a button press
+
+  // check REC button
+  while (1)
+  {
+    if (
+      (digitalRead(RECORD_BUTTON) == false) &&
+      (digitalRead(PLAY_BUTTON) == true) &&
+      (digitalRead(TRACK_SELECT_BUTTON) == true) &&
+      (digitalRead(SNAKE_BUTTON) == true) &&
+      (digitalRead(NO_BUTTON) == true) &&
+      (digitalRead(YES_BUTTON) == true)
+    )
+    {
+      Serial.println("REC button success");
+      blink_led(RED_LED_pin);
+      break;
+    }
+  }
+
+  // check PLAY button
+  while (1)
+  {
+    if (
+      (digitalRead(RECORD_BUTTON) == true) &&
+      (digitalRead(PLAY_BUTTON) == false) &&
+      (digitalRead(TRACK_SELECT_BUTTON) == true) &&
+      (digitalRead(SNAKE_BUTTON) == true) &&
+      (digitalRead(NO_BUTTON) == true) &&
+      (digitalRead(YES_BUTTON) == true)
+    )
+    {
+      Serial.println("PLAY button success");
+      blink_led(RED_LED_pin);
+      break;
+    }
+  }
+
+  // check TRACK button
+  while (1)
+  {
+    if (
+      (digitalRead(RECORD_BUTTON) == true) &&
+      (digitalRead(PLAY_BUTTON) == true) &&
+      (digitalRead(TRACK_SELECT_BUTTON) == false) &&
+      (digitalRead(SNAKE_BUTTON) == true) &&
+      (digitalRead(NO_BUTTON) == true) &&
+      (digitalRead(YES_BUTTON) == true)
+    )
+    {
+      Serial.println("TRACK button success");
+      blink_led(RED_LED_pin);
+      break;
+    }
+  }
+
+  // check SNAKE button
+  while (1)
+  {
+    if (
+      (digitalRead(RECORD_BUTTON) == true) &&
+      (digitalRead(PLAY_BUTTON) == true) &&
+      (digitalRead(TRACK_SELECT_BUTTON) == true) &&
+      (digitalRead(SNAKE_BUTTON) == false) &&
+      (digitalRead(NO_BUTTON) == true) &&
+      (digitalRead(YES_BUTTON) == true)
+    )
+    {
+      Serial.println("SNAKE button success");
+      blink_led(GREEN_LED_pin);
+      break;
+    }
+  }
+
+  // check NO button
+  while (1)
+  {
+    if (
+      (digitalRead(RECORD_BUTTON) == true) &&
+      (digitalRead(PLAY_BUTTON) == true) &&
+      (digitalRead(TRACK_SELECT_BUTTON) == true) &&
+      (digitalRead(SNAKE_BUTTON) == true) &&
+      (digitalRead(NO_BUTTON) == false) &&
+      (digitalRead(YES_BUTTON) == true)
+    )
+    {
+      Serial.println("NO button success");
+      blink_led(GREEN_LED_pin);
+      break;
+    }
+  }
+
+  // check YES button
+  while (1)
+  {
+    if (
+      (digitalRead(RECORD_BUTTON) == true) &&
+      (digitalRead(PLAY_BUTTON) == true) &&
+      (digitalRead(TRACK_SELECT_BUTTON) == true) &&
+      (digitalRead(SNAKE_BUTTON) == true) &&
+      (digitalRead(NO_BUTTON) == true) &&
+      (digitalRead(YES_BUTTON) == false)
+    )
+    {
+      Serial.println("YES button success");
+      blink_led(GREEN_LED_pin);
+      break;
+    }
+  }
+  return true;
+}
+
+void production_test_servo_buzz()
+{
+  digitalWrite(SERVO_PWR_CONTROL_PIN, HIGH);   // turn on servo power
+
+  myservo.attach(SERVO_PWM_PIN);  // attaches the servo on pin # to the servo object
+
+  myservo.write(180); // move servo
+  delay(500);
+  myservo.write(90); // move servo
+  delay(500);
+
+  tone(BUZZER_PIN, 500, 300);
+  delay(300);
+  noTone(BUZZER_PIN);
+
+  myservo.detach();  // detach() servo control pin
+  digitalWrite(SERVO_PWR_CONTROL_PIN, LOW); // turn off servo power
 }
